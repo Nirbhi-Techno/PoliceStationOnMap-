@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Police Stations Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
+    <style>
+        #map {
+            height: 500px;
+            margin-top: 10px;
+        }
+        .custom-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            border-radius: 100%;
+        }
+        #search-container {
+            margin-top: 10px;
+        }
+        #search-input {
+            width: 300px;
+            padding: 5px;
+        }
+        #search-button {
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+    <h4>Police Stations Map</h4>
+    <div id="search-container">
+        <input type="text" id="search-input" placeholder="Enter police station name" />
+        <button id="search-button">Search</button>
+    </div>
+    <div id="map"></div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
+
+    <script>
+        // Initialize the map centered on India
+        const map = L.map('map').setView([20.5937, 78.9629], 5);
+
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Initialize marker cluster group and marker storage
+        const markers = L.markerClusterGroup();
+        const markerMap = {}; // To store markers by station name
+
+        // Define colors for different types of police stations
+        const typeColors = {
+            "Police station": "red",
+            "State police": "blue",
+            "Government office": "green",
+            "Police department": "purple",
+            "Civil police": "orange"
+        };
+
+        // Path to the Excel file
+        const filePath = './police_stations.xlsx';
+
+        // Function to load Excel data
+        function loadXLSXData(path) {
+            fetch(path)
+                .then(response => response.arrayBuffer())
+                .then(data => {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0]; // Assuming data is in the first sheet
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    addMarkers(jsonData); // Pass data to marker function
+                })
+                .catch(error => console.error('Error loading XLSX file:', error));
+        }
+
+        // Function to add markers to the map
+        function addMarkers(data) {
+            data.forEach(row => {
+                const lat = parseFloat(row['lat']);
+                const lng = parseFloat(row['long']);
+                const stationType = row['type_of_police_station'];
+                const stationName = row['police_station_name'];
+                const address = row['address'];
+                const contact = row['contact_number'];
+
+                if (lat && lng && stationType && stationName) {
+                    // Determine the marker color based on station type
+                    const iconColor = typeColors[stationType] || "gray"; // Default to gray if type is undefined
+
+                    // Create a custom icon for the marker
+                    const customIcon = L.divIcon({
+                        className: "custom-icon",
+                        html: `<div style="background-color:${iconColor}; width:10px; height:10px; border-radius:50%;"></div>`,
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10]
+                    });
+
+                    // Create the marker with the custom icon
+                    const marker = L.marker([lat, lng], { icon: customIcon });
+
+                    // Bind popup information to the marker
+                    marker.bindPopup(`
+                        <b>${stationName}</b><br>
+                        Type: ${stationType}<br>
+                        Address: ${address}<br>
+                        Contact: ${contact}
+                    `);
+
+                    // Add marker to the cluster group and store in the marker map
+                    markers.addLayer(marker);
+                    markerMap[stationName.toLowerCase()] = marker; // Store by lowercase name for case-insensitive search
+                }
+            });
+
+            // Add the marker cluster group to the map
+            map.addLayer(markers);
+        }
+
+        // Function to search for a police station and highlight it
+        function searchPoliceStation(stationName) {
+            const marker = markerMap[stationName.toLowerCase()];
+            if (marker) {
+                map.setView(marker.getLatLng(), 12); // Zoom in to the marker
+                marker.openPopup(); // Open the popup for the marker
+            } else {
+                alert('Police station not found!');
+            }
+        }
+
+        // Event listener for the search button
+        document.getElementById('search-button').addEventListener('click', () => {
+            const searchInput = document.getElementById('search-input').value.trim();
+            if (searchInput) {
+                searchPoliceStation(searchInput);
+            } else {
+                alert('Please enter a police station name.');
+            }
+        });
+
+        // Load the Excel file and populate the map
+        loadXLSXData(filePath);
+
+    </script>
+    
+</body>
+</html>
+
