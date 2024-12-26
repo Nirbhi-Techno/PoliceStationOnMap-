@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
     <style>
         #map {
-            height: 500px;
+            height: 620px;
             margin-top: 10px;
         }
         .custom-icon {
@@ -18,9 +18,6 @@
             align-items: center;
             font-weight: bold;
             border-radius: 100%;
-        }
-        #search-container {
-            margin-top: 10px;
         }
         #search-input {
             width: 300px;
@@ -130,7 +127,7 @@
         function searchPoliceStation(stationName) {
             const marker = markerMap[stationName.toLowerCase()];
             if (marker) {
-                map.setView(marker.getLatLng(), 12); // Zoom in to the marker
+                map.setView(marker.getLatLng(), 20); // Zoom in to the marker
                 marker.openPopup(); // Open the popup for the marker
             } else {
                 alert('Police station not found!');
