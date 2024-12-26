@@ -46,9 +46,26 @@
         const map = L.map('map').setView([20.5937, 78.9629], 5);
 
         // Add OpenStreetMap tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
+        });
+
+        // Bhuvan WMS Base Layer
+        const bhuvanLayer = L.tileLayer.wms("https://bhuvan-vec1.nrsc.gov.in/bhuvan/gwc/service/wms", {
+        layers: 'india3',
+        format: 'image/png',
+        transparent: true
+        });
+
+        // Add OpenStreetMap layer as default
+        osmLayer.addTo(map);
+
+        // Add Layer Control for switching between OpenStreetMap and Bhuvan
+        const baseLayers = {
+            "OpenStreetMap": osmLayer,
+            "Bhuvan": bhuvanLayer
+        };
+        L.control.layers(baseLayers).addTo(map);
 
         // Initialize marker cluster group and marker storage
         const markers = L.markerClusterGroup();
@@ -148,7 +165,5 @@
         loadXLSXData(filePath);
 
     </script>
-    
 </body>
 </html>
-
